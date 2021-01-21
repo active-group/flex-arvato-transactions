@@ -33,20 +33,17 @@ init_database() ->
     ok.
 
 create_test_accounts() ->
-        Account1 = #account{account_number = 42, amount = 100 },
-        Account2 = #account{account_number = 43, amount = 100 },
-        Account3 = #account{account_number = 44, amount = 100 },
-        database:put_account(Account1),
-        database:put_account(Account2),
-        database:put_account(Account3),
+    Account1 = #account{account_number = 42, amount = 100 },
+    Account2 = #account{account_number = 43, amount = 100 },
+    Account3 = #account{account_number = 44, amount = 100 },
+    database:put_account(Account1),
+    database:put_account(Account2),
+    database:put_account(Account3),
 
-        % {ok, #account{account_number = 42}} = database:get_account(42),
-        % {ok, #account{account_number = 43}} = database:get_account(43),
-        % {ok, #account{account_number = 44}} = database:get_account(44),
-        
-        {ok, Account1} = database:get_account(42),
-        {ok, Account2} = database:get_account(43),
-        {ok, Account3} = database:get_account(44),
+    % get with pattern matching variants
+    {ok, #account{account_number = 42, amount = 100 }} = database:get_account(42),
+    {ok, Account2} = database:get_account(43),
+    {ok, Account3} = database:get_account(44),
     ok.
 
 write(Table, Tuple) ->
