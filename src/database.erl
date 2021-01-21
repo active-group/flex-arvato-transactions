@@ -13,9 +13,9 @@
 
 %% destroy tables in case they already existed
 destroy_tables() ->
-    mnesia:delete_table(transaction),
-    mnesia:delete_table(account),
-    mnesia:delete_table(table_id).
+    mnesia:del_table_copy(transaction, node()),
+    mnesia:del_table_copy(account, node()),
+    mnesia:del_table_copy(table_id, node()).
 
 % unfortunately, delete_table doesn't always work such that create_table doesn't fail, so don't check return value
 create_tables() ->
@@ -29,6 +29,24 @@ init_database() ->
     destroy_tables(),
     create_tables(),
     ok = mnesia:wait_for_tables([ transaction, account, table_id], 1000),
+    ok = create_test_accounts(),
+    ok.
+
+create_test_accounts() ->
+        Account1 = #account{account_number = 42, amount = 100 },
+        Account2 = #account{account_number = 43, amount = 100 },
+        Account3 = #account{account_number = 44, amount = 100 },
+        database:put_account(Account1),
+        database:put_account(Account2),
+        database:put_account(Account3),
+
+        % {ok, #account{account_number = 42}} = database:get_account(42),
+        % {ok, #account{account_number = 43}} = database:get_account(43),
+        % {ok, #account{account_number = 44}} = database:get_account(44),
+        
+        {ok, Account1} = database:get_account(42),
+        {ok, Account2} = database:get_account(43),
+        {ok, Account3} = database:get_account(44),
     ok.
 
 write(Table, Tuple) ->

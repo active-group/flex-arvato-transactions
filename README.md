@@ -23,14 +23,17 @@ The web-frontend is served at http://localhost:8000/
 
 ```
 cd .devcontainer
-docker build -t erlang-flex .
+docker build -t flex-arvato-transactions .
 ```
 
 Then start a shell in the the container with `run-docker.sh` or:
 
 ```
-docker run --rm -p 8000:8000 -v PWD:/monolithic -w /monolithic -i -t erlang-flex bash
+docker run --rm -p 8000:8000 -v PWD:/transactions -w /transactions -i -t flex-arvato-transactions bash
 ```
 
 Replace `PWD` by the full path of the `monolithic` directory.
 
+
+Windows:
+docker run --rm -p 8000:8000 -v /mnt/d/Workspaces/Training/FLEX/flex-arvato/flex-arvato-transactions:/flex-arvato-transactions -w /flex-arvato-transactions -i -t flex-arvato-transactions bash

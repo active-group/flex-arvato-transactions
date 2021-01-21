@@ -12,7 +12,7 @@ main_test_() ->
      {foreach,
       fun setup/0,
       fun cleanup/1,
-      [ fun get_transactions/1]
+      [ fun get_transactions/1, fun put_testAccounts/1 ]
      }}.
 
 
@@ -47,6 +47,19 @@ get_transactions(_) ->
   end.
 
 
+put_testAccounts(_) ->
+    fun() ->
+            Account1 = #account{account_number = 1, amount = 100 },
+            Account2 = #account{account_number = 2, amount = 100 },
+            Account3 = #account{account_number = 3, amount = 100 },
+            database:put_account(Account1),
+            database:put_account(Account2),
+            database:put_account(Account3),
+
+            {ok, Account1} = database:get_account(1),
+            {ok, Account2} = database:get_account(2),
+            {ok, Account3} = database:get_account(3)
+    end.
 
 
 
