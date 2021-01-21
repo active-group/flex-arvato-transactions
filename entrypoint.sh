@@ -5,7 +5,7 @@ case "$1" in
     deploy)
         echo mycookie > $HOME/.erlang.cookie
         chmod 400 $HOME/.erlang.cookie
-        /buildroot/_build/default/rel/erlbank_monolithic/bin/erlbank_monolithic foreground
+        /buildroot/_build/default/rel/erlbank_transactions/bin/erlbank_transactions foreground
         ;;
     test)
         rebar3 eunit
@@ -58,7 +58,7 @@ case "$1" in
 
         echo mycookie > $HOME/.erlang.cookie
         chmod 400 $HOME/.erlang.cookie
-        /buildroot/_build/default/rel/erlbank_monolithic/bin/erlbank_monolithic foreground
+        /buildroot/_build/default/rel/erlbank_transactions/bin/erlbank_transactions foreground
         ;;
     *)
         sh -c $@

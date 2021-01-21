@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%% @doc erlbank_monolithic public API
+%% @doc erlbank_transactions public API
 %% @end
 %%%-------------------------------------------------------------------
 
--module(erlbank_monolithic_app).
+-module(erlbank_transactions_app).
 
 -behaviour(application).
 
@@ -15,9 +15,9 @@
 start_cowboy() ->
     %% Cowboy test code
     Dispatch = cowboy_router:compile([{'_', [{"/", web_frontend, index},
-                                             {"/accounts/open", web_frontend, open_account},
-                                             {"/transactions/create", web_frontend, create_transaction},
-                                             {"/bank-statements/request", web_frontend, request}]}]),
+                                             {"/transactions/create", web_frontend, create_transaction}
+
+                              ]}]),
 
     {ok, _} = cowboy:start_clear(my_http_listener,
                                  [{port, 8000}],
@@ -27,7 +27,7 @@ start_cowboy() ->
 start(_StartType, _StartArgs) ->
     database:init_database(),
     start_cowboy(),
-    erlbank_monolithic_sup:start_link().
+    erlbank_transactions_sup:start_link().
 
 stop(_State) ->
     ok.

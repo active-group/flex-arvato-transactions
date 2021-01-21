@@ -2,13 +2,8 @@
 -type account_number() :: integer().
 -type money() :: number().
 
--record(person, 
-    {id :: unique_id(), 
-     firstname :: binary(),
-     surname :: binary()}).
 -record(account,
     {account_number :: account_number(),
-     person_id :: unique_id(),
      amount :: money()}).
 -record(transaction, 
     {id :: unique_id(), 

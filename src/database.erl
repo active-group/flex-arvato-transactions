@@ -3,10 +3,9 @@
 -module(database).
 -include("data.hrl").
 -export([init_database/0,
-         put_account/1, get_account/1, get_all_accounts/0,
-         put_person/1, get_person/1, get_all_persons/0, 
+         put_account/1, get_account/1,
          put_transaction/1, get_transaction/1, get_all_transactions/0, get_all_transactions/1, 
-         unique_account_number/0,unique_tx_id/0, unique_person_id/0,
+         unique_tx_id/0,
          atomically/1]).
 
 %% id-table for atomic id increment
@@ -14,23 +13,22 @@
 
 %% destroy tables in case they already existed
 destroy_tables() ->
-    mnesia:delete_table(person),
     mnesia:delete_table(transaction),
     mnesia:delete_table(account),
     mnesia:delete_table(table_id).
 
+% unfortunately, delete_table doesn't always work such that create_table doesn't fail, so don't check return value
 create_tables() ->
-    {atomic, ok} = mnesia:create_table(person, [{attributes, [id,firstname,surname]}]),
-    {atomic, ok} = mnesia:create_table(transaction, [{attributes, [id, timestamp, from_acc_nr, to_acc_nr, amount]}]),
-    {atomic, ok} = mnesia:create_table(account, [{attributes, [account_number, person_id, amount]}]),
-    {atomic, ok} = mnesia:create_table(table_id, [{record_name, table_id}, {attributes, record_info(fields, table_id)}]).
+    mnesia:create_table(transaction, [{attributes, [id, timestamp, from_acc_nr, to_acc_nr, amount]}]),
+    mnesia:create_table(account, [{attributes, [account_number, amount]}]),
+    mnesia:create_table(table_id, [{record_name, table_id}, {attributes, record_info(fields, table_id)}]).
 
 init_database() ->
     mnesia:create_schema([node()]),
     mnesia:start(),
-    mnesia:transaction(fun destroy_tables/0),
-    mnesia:transaction(fun create_tables/0),
-    mnesia:wait_for_tables([person, transaction, account, table_id], 1000),
+    destroy_tables(),
+    create_tables(),
+    ok = mnesia:wait_for_tables([ transaction, account, table_id], 1000),
     ok.
 
 write(Table, Tuple) ->
@@ -55,32 +53,15 @@ read_all(Table, Deserialize) ->
     lists:map(fun (Tuple) -> Deserialize(erlang:delete_element(1, Tuple)) end, Res).
 
 -spec put_account(#account{}) -> ok.
-put_account(#account{account_number = AccountNumber, person_id = PersonId, amount = Amount}) ->
-    write(account, {AccountNumber, PersonId, Amount}).
+put_account(#account{account_number = AccountNumber, amount = Amount}) ->
+    write(account, {AccountNumber, Amount}).
 
-deserialize_account({AccountNumber, PersonId, Amount}) ->
-    #account{account_number = AccountNumber, person_id = PersonId, amount = Amount}.
+deserialize_account({AccountNumber,  Amount}) ->
+    #account{account_number = AccountNumber, amount = Amount}.
 
 -spec get_account(account_number()) -> {ok, #account{}} | {error, any()}.
 get_account(AccountNumber) ->
     read_one(account, AccountNumber, fun deserialize_account/1).
-
--spec get_all_accounts() -> list(#account{}).
-get_all_accounts() -> read_all(account, fun deserialize_account/1).
-
--spec put_person(#person{}) -> ok.
-put_person(#person{id = Id, firstname = Firstname, surname = Surname}) ->
-    write(person, {Id, Firstname, Surname}).
-
-deserialize_person({Id, Firstname, Surname}) ->
-    #person{id = Id, firstname = Firstname, surname = Surname}.
-
--spec get_person(unique_id()) -> {ok, #person{} | {error, any()}}.
-get_person(Id) ->
-    read_one(person, Id, fun deserialize_person/1).
-
--spec get_all_persons() -> list(#person{}).
-get_all_persons() -> read_all(person, fun deserialize_person/1).
 
 -spec put_transaction(#transaction{}) -> ok.
 put_transaction(#transaction{id = Id, timestamp = Timestamp, from_acc_nr = FromAccNr, to_acc_nr = ToAccNr, amount = Amount}) ->
@@ -109,11 +90,6 @@ get_all_transactions(AccountNr) ->
     {atomic, Res} = mnesia:transaction(Fun),
     lists:map(fun (Tuple) -> deserialize_transaction(erlang:delete_element(1, Tuple)) end, Res).
 
--spec unique_account_number() -> unique_id().
-unique_account_number() -> mnesia:dirty_update_counter(table_id, account, 1).
-
--spec unique_person_id() -> unique_id().
-unique_person_id() -> mnesia:dirty_update_counter(table_id, person, 1).
 
 -spec unique_tx_id() -> unique_id().
 unique_tx_id() -> mnesia:dirty_update_counter(table_id, transaction, 1).

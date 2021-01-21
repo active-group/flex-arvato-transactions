@@ -1,6 +1,6 @@
-# Erlbank Monolithic
+# Erlbank Transactions Self Contained System (SCS) 
 
-Erlbank Legacy System
+Erlbank Future System
 
 ## Build
 
