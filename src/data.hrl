@@ -10,7 +10,10 @@
      timestamp :: erlang:timestamp(), 
      from_acc_nr :: account_number(), 
      to_acc_nr :: account_number(), 
-     amount :: money()}).
+     amount :: money(),
+     from_account_resulting_balance :: money(),
+     to_account_resulting_balance :: money()
+    }).
 
 -record(transaction_service_state, {
   subscriber_pids :: list(pid())

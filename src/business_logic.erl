@@ -3,7 +3,7 @@
 -module(business_logic).
 -include("data.hrl").
 -include("transactions_events.hrl").
--export([ transfer/3, sort_tx/1, get_transactions/1 ]).
+-export([ transfer/3, sort_tx/1, get_transactions/1, get_transactions_from/1]).
 
 
 %% Opens an account, that is creates a new account containing a new person 
@@ -13,6 +13,10 @@
 -spec get_transactions(unique_id()) -> list(#transaction{}).
 get_transactions(Id) ->
      database:get_all_transactions(Id).
+
+-spec get_transactions_from(unique_id()) -> list(#transaction{}).
+get_transactions_from(FromId) ->
+     database:get_transactions_from(FromId).
 
 %% Takes a sender & receiver account number and an amount and transfers 
 %% that amount from sender to receiver.
@@ -38,25 +42,27 @@ transfer(SenderAccountNumber, ReceiverAccountNumber, Amount) ->
 
                                    if
                                        AccSenderAmount - Amount >= 0 ->
+                                           NewAccSender = AccSender#account{amount = (AccSenderAmount - Amount)},
+                                           NewAccReceiver = AccReceiver#account{amount = (AccReceiverAmount + Amount)},
                                            TxId = database:unique_tx_id(),
                                            Tx = #transaction{id = TxId,
                                                              timestamp = erlang:timestamp(),
                                                              from_acc_nr = SenderAccountNumber,
                                                              to_acc_nr = ReceiverAccountNumber,
-                                                             amount = Amount},
-                                           NewAccSender = AccSender#account{amount = (AccSenderAmount - Amount)},
-                                           NewAccReceiver = AccReceiver#account{amount = (AccReceiverAmount + Amount)},
+                                                             amount = Amount,
+                                                             from_account_resulting_balance = NewAccSender#account.amount,
+                                                             to_account_resulting_balance = NewAccReceiver#account.amount                                                         },
                                            database:put_transaction(Tx),
                                            database:put_account(NewAccSender),
                                            database:put_account(NewAccReceiver),
-                                           {ok, Tx, NewAccSender, NewAccReceiver};
+                                           {ok, Tx};
                                        true ->
                                            {error, insufficient_funds}
                                    end
                            end
                   end,
 
-    {_, Tx, NewAccSender, NewAccReceiver} = database:atomically(Transaction),
+    {_, Tx} = database:atomically(Transaction),
     % Schicke "transaction created" an transaction server
     TransactionEvent = #transaction_event{
       transaction_id = Tx#transaction.id,
@@ -64,8 +70,8 @@ transfer(SenderAccountNumber, ReceiverAccountNumber, Amount) ->
       from_acc_nr = Tx#transaction.from_acc_nr,
       to_acc_nr = Tx#transaction.to_acc_nr,
       timestamp = Tx#transaction.timestamp,
-      from_account_resulting_balance = NewAccSender#account.amount,
-      to_account_resulting_balance = NewAccReceiver#account.amount
+      from_account_resulting_balance = Tx#transaction.from_account_resulting_balance,
+      to_account_resulting_balance = Tx#transaction.to_account_resulting_balance
     },
     gen_server:cast(transaction_service, TransactionEvent).
 .

@@ -4,7 +4,7 @@
 -include("data.hrl").
 -export([init_database/0,
          put_account/1, get_account/1,
-         put_transaction/1, get_transaction/1, get_all_transactions/0, get_all_transactions/1, 
+         put_transaction/1, get_transaction/1, get_all_transactions/0, get_all_transactions/1, get_transactions_from/1,  
          unique_tx_id/0,
          atomically/1]).
 
@@ -113,3 +113,7 @@ unique_tx_id() -> mnesia:dirty_update_counter(table_id, transaction, 1).
 atomically(Fun) ->
     {atomic, Res} = mnesia:transaction(Fun),
     Res.
+
+-spec get_transactions_from(unique_id()) -> list(#transaction{}).
+get_transactions_from(Id) ->
+    database:get_transactions_from(Id).
