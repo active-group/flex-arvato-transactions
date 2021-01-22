@@ -116,4 +116,12 @@ atomically(Fun) ->
 
 -spec get_transactions_from(unique_id()) -> list(#transaction{}).
 get_transactions_from(Id) ->
-    database:get_transactions_from(Id).
+    Fun = fun() ->
+            mnesia:select(transaction,
+                          [{'$1',
+                            [{'>=', {element, #transaction.id, '$1'}, Id}],
+                            ['$_']}])
+                      end,
+    {atomic, Res} = mnesia:transaction(Fun),
+    lists:map(fun (Tuple) -> deserialize_transaction(erlang:delete_element(1, Tuple)) end, Res).
+
