@@ -4,7 +4,6 @@
 -type account_number() :: integer().
 -type money() :: number().
 
-% einfacher
 -record(transaction_event, {
   transaction_id :: unique_id(),  % fortlaufend
   timestamp :: erlang:timestamp(),  % der transaction
@@ -17,7 +16,7 @@
 
 % subscription event
 -record(transaction_event_subscription, {
-  from_id :: unique_id(),
+  from_transaction_id :: unique_id(), % Wenn 0 oder leer => alle
   subscriber_pid :: pid()
 }).
 
