@@ -61,7 +61,9 @@ init(Req, create_transaction) ->
 
     Body = case business_logic:transfer(SenderAccountNumber, ReceiverAccountNumber, Amount) of
                {ok, TxId} ->
-                   io_lib:format(transaction_success(), [TxId]);
+                   io_lib:format(transaction_success(), [TxId])
+                  % Schicke transaction_created" an Server  
+             ;
                {error, Err} ->
                    io_lib:format(transaction_error(), [Err])
            end,

@@ -11,3 +11,7 @@
      from_acc_nr :: account_number(), 
      to_acc_nr :: account_number(), 
      amount :: money()}).
+
+-record(transaction_service_state, {
+  subscriber_pids :: list(pid())
+}).

@@ -2,6 +2,7 @@
 
 -module(business_logic).
 -include("data.hrl").
+-include("transactions_events.hrl").
 -export([ transfer/3, sort_tx/1, get_transactions/1 ]).
 
 
@@ -48,14 +49,26 @@ transfer(SenderAccountNumber, ReceiverAccountNumber, Amount) ->
                                            database:put_transaction(Tx),
                                            database:put_account(NewAccSender),
                                            database:put_account(NewAccReceiver),
-                                           {ok, TxId};
+                                           {ok, Tx, NewAccSender, NewAccReceiver};
                                        true ->
                                            {error, insufficient_funds}
                                    end
                            end
                   end,
 
-    database:atomically(Transaction).
+    {_, Tx, NewAccSender, NewAccReceiver} = database:atomically(Transaction),
+    % Schicke "transaction created" an transaction server
+    TransactionEvent = #transaction_event{
+      transaction_id = Tx#transaction.id,
+      amount = Tx#transaction.amount,
+      from_acc_nr = Tx#transaction.from_acc_nr,
+      to_acc_nr = Tx#transaction.to_acc_nr,
+      timestamp = Tx#transaction.timestamp,
+      from_account_resulting_balance = NewAccSender#account.amount,
+      to_account_resulting_balance = NewAccReceiver#account.amount
+    },
+    gen_server:cast(transaction_service, TransactionEvent).
+.
 
 %% Takes a list of transactions and returns them sorted by their id (asc)
 
