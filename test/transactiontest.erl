@@ -1,6 +1,7 @@
 -module(transactiontest).
 -include_lib("eunit/include/eunit.hrl").
 -include("data.hrl").
+-include("transactions_events.hrl").
 
 setup() ->
     database:init_database().
@@ -12,7 +13,8 @@ main_test_() ->
      {foreach,
       fun setup/0,
       fun cleanup/1,
-      [ fun get_transactions/1, fun put_testAccounts/1 ]
+      [ fun get_transactions/1, fun put_testAccounts/1,
+        fun transactions_server_test/1 ]
      }}.
 
 
@@ -60,6 +62,30 @@ put_testAccounts(_) ->
             {ok, Account2} = database:get_account(2),
             {ok, Account3} = database:get_account(3)
     end.
+
+transactions_server_test(_) ->
+  fun () ->
+    erlbank_transactions_server:start(),
+    gen_server:cast(whereis(transaction_service),
+      #transaction_event_subscription{ 
+            from_transaction_id = 0, 
+            subscriber_pid = self()}),
+    Event = #transaction_event{transaction_id = 1,
+        timestamp = erlang:timestamp(),
+        from_acc_nr = 1,
+        to_acc_nr = 2,
+        amount = 55,
+        from_account_resulting_balance = 75,
+        to_account_resulting_balance = 65},        
+    gen_server:cast(whereis(transaction_service), 
+      Event),
+    receive
+      {_, REvent} -> Event = REvent
+    end,
+    erlbank_transactions_server:stop()
+  end.
+    
+
 
 
 

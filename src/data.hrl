@@ -15,6 +15,3 @@
      to_account_resulting_balance :: money()
     }).
 
--record(transaction_service_state, {
-  subscriber_pids :: list(pid())
-}).

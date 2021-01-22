@@ -1,8 +1,9 @@
 % Service name: transaction_service
 
--type unique_id() :: pos_integer().
--type account_number() :: integer().
--type money() :: number().
+% Duplicates from data.hrl:
+% -type unique_id() :: pos_integer().
+% -type account_number() :: integer().
+% -type money() :: number().
 
 -record(transaction_event, {
   transaction_id :: unique_id(),  % fortlaufend

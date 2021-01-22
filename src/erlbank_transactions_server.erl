@@ -9,39 +9,43 @@
 % Schnittstelle für Callbacks
 -export([
   % gen_server
-  init/1, handle_cast/2, handle_call/3, start/0 
+  init/1, handle_cast/2, handle_call/3, start/0, stop/0
 ]).
 
+-record(transaction_service_state, {
+  subscriber_pids :: list(pid())
+}).
+
 start() ->
-  {ok, Pid} = gen_server:start(?MODULE, unused, []),
+  {ok, Pid} = gen_server:start(?MODULE, unused, [{debug, [trace, {log_to_file, "/var/tmp/transactions.log"} ]}]),
                            %  ^^^^^^^^^^^^ wird zum  Argument von init
   % macht einen neuen Prozess, ruft dort init auf, startet Schleife, die Nachrichten empfängt
   register(transaction_service, Pid),
   global:register_name(transaction_service, Pid).
 
+stop() ->
+  gen_server:stop(transaction_service).
+
 % InitialN kommt von gen_server:start
 % NOTE Maik says don't bother saving service state  
-init(_) -> {ok, #transaction_service_state{subscriber_pids = []}}. % gibt initialen Zustand zurück
+init(_) -> 
+  {ok, #transaction_service_state{subscriber_pids = []}}. % gibt initialen Zustand zurück
 
 %%account_created_event() -> 
 
 %%subscribe_transaction_event() -> 
 
-calc_inc(Pid, Increment) -> gen_server:cast(Pid, #inc{increment = Increment}).
-calc_get(Pid) -> gen_server:call(Pid, #get{}).
-
--type message() :: #reset{} | #inc{} 
-                 | #mult{} | #divide{} | #get{}.
-
 % TODO -spec handle_message(number(), message()) -> number().
-handle_subscription_event(#transaction_service_state{subscriber_pids = SubscriberPids}, #transaction_event_subscription{from_transaction_id = FromTransactionId, subscriber_pid = SubscriberPid}) ->
+handle_subscription_event(#transaction_service_state{subscriber_pids = SubscriberPids}, 
+    #transaction_event_subscription{from_transaction_id = FromTransactionId, 
+                                    subscriber_pid = SubscriberPid}) ->
   NewState = #transaction_service_state{subscriber_pids = [SubscriberPid|SubscriberPids]},
   Transactions = business_logic:get_transactions_from(FromTransactionId),
   send_transactions(SubscriberPid, Transactions),
   NewState.
 % TODO transaction_event_subscription ohne from_transaction_id parameter
 
-send_transactions(SubscriberPid, []) -> ok;
+send_transactions(_SubscriberPid, []) -> ok;
 send_transactions(SubscriberPid, [Tx | RestTransactions]) ->
   TransactionEvent = #transaction_event{
     transaction_id = Tx#transaction.id,
@@ -59,8 +63,7 @@ send_transactions(SubscriberPid, [Tx | RestTransactions]) ->
 handle_transaction_event(State, #transaction_event{} = TransactionEvent) ->
   % An alle subscriber das transaction_event schicken
   send_event(State#transaction_service_state.subscriber_pids, TransactionEvent),
-  State
-.
+  State.
 
 send_event([], _TransactionEvent) -> ok;
 send_event([FirstPid | RestPids], TransactionEvent) ->
@@ -81,8 +84,10 @@ send_event([FirstPid | RestPids], TransactionEvent) ->
 % Mögliche Fälle
 % - #transaction_event_subscription
 % - #transaction_event
-handle_cast(#transaction_event_subscription{} = Message, State) -> {noreply, handle_subscription_event(State, Message)}.
-handle_cast(#transaction_event{} = Message, State) -> {noreply, handle_transaction_event(State, Message)}.
+handle_cast(#transaction_event_subscription{} = Message, State) -> 
+  {noreply, handle_subscription_event(State, Message)};
+handle_cast(#transaction_event{} = Message, State) ->
+  {noreply, handle_transaction_event(State, Message)}.
 
 % Ein Request, der keine Antwort erfordert: cast (asynchron)
 % Ein Request, der eine Antwort erfordert: call (synchron)
@@ -95,7 +100,6 @@ handle_cast(#transaction_event{} = Message, State) -> {noreply, handle_transacti
 % State = term()
 % Result = {reply,Reply,NewState}
 
-handle_call(#get{}, _From, N) -> 
-    Reply = N,
-    NewState = N,
-    {reply, Reply, NewState}.
+handle_call(_, _From, State) -> 
+    {reply, cant_handle, State}.
+

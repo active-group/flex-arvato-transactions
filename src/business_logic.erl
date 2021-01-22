@@ -74,7 +74,6 @@ transfer(SenderAccountNumber, ReceiverAccountNumber, Amount) ->
       to_account_resulting_balance = Tx#transaction.to_account_resulting_balance
     },
     gen_server:cast(transaction_service, TransactionEvent).
-.
 
 %% Takes a list of transactions and returns them sorted by their id (asc)
 
