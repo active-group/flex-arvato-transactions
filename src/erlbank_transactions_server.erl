@@ -41,6 +41,7 @@ handle_subscription_event(#transaction_service_state{subscriber_pids = Subscribe
                                     subscriber_pid = SubscriberPid}) ->
   NewState = #transaction_service_state{subscriber_pids = [SubscriberPid|SubscriberPids]},
   Transactions = business_logic:get_transactions_from(FromTransactionId),
+  lager:info("handling subscription events, sending ~p transactions to ~p~n", [length(Transactions), SubscriberPid]),
   send_transactions(SubscriberPid, Transactions),
   NewState.
 % TODO transaction_event_subscription ohne from_transaction_id parameter
@@ -62,7 +63,9 @@ send_transactions(SubscriberPid, [Tx | RestTransactions]) ->
 
 handle_transaction_event(State, #transaction_event{} = TransactionEvent) ->
   % An alle subscriber das transaction_event schicken
-  send_event(State#transaction_service_state.subscriber_pids, TransactionEvent),
+  Subscribers = State#transaction_service_state.subscriber_pids,
+  lager:info("notifying subscribers ~p of event ~p~n", [Subscribers, TransactionEvent]),
+  send_event(Subscribers, TransactionEvent),
   State.
 
 send_event([], _TransactionEvent) -> ok;
