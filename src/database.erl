@@ -13,8 +13,11 @@
 
 %% destroy tables in case they already existed
 destroy_tables() ->
+    mnesia:delete_table(transaction),
     mnesia:del_table_copy(transaction, node()),
+    mnesia:delete_table(account),
     mnesia:del_table_copy(account, node()),
+    mnesia:delete_table(table_id),
     mnesia:del_table_copy(table_id, node()).
 
 % unfortunately, delete_table doesn't always work such that create_table doesn't fail, so don't check return value
@@ -24,12 +27,18 @@ create_tables() ->
     mnesia:create_table(account, [{attributes, [account_number, amount]}]),
     mnesia:create_table(table_id, [{record_name, table_id}, {attributes, record_info(fields, table_id)}]).
 
+clear_tables() ->
+    mnesia:clear_table(account),
+    mnesia:clear_table(account),
+    mnesia:clear_table(table_id).
+
 init_database() ->
     mnesia:create_schema([node()]),
     mnesia:start(),
     destroy_tables(),
     create_tables(),
     ok = mnesia:wait_for_tables([ transaction, account, table_id], 1000),
+    mnesia:transaction(fun clear_tables/0),
     ok = create_test_accounts(),
     ok.
 
