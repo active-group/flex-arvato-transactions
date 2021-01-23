@@ -39,23 +39,7 @@ init_database() ->
     create_tables(),
     ok = mnesia:wait_for_tables([ transaction, account, table_id], 1000),
     mnesia:transaction(fun clear_tables/0),
-    ok = create_test_accounts(),
     ok.
-
-create_test_accounts() ->
-    Account1 = #account{account_number = 42, amount = 100 },
-    Account2 = #account{account_number = 43, amount = 100 },
-    Account3 = #account{account_number = 44, amount = 100 },
-    database:put_account(Account1),
-    database:put_account(Account2),
-    database:put_account(Account3),
-
-    % get with pattern matching variants
-    {ok, #account{account_number = 42, amount = 100 }} = database:get_account(42),
-    {ok, Account2} = database:get_account(43),
-    {ok, Account3} = database:get_account(44),
-    ok.
-
 write(Table, Tuple) ->
     Fun = fun() -> ok = mnesia:write(Table, erlang:insert_element(1, Tuple, Table), write) end,
     {atomic, ok} = mnesia:transaction(Fun),
