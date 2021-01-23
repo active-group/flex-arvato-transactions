@@ -3,12 +3,18 @@
 -module(business_logic).
 -include("data.hrl").
 -include("transactions_events.hrl").
--export([ transfer/3, sort_tx/1, get_transactions/1, get_transactions_from/1]).
+-export([ transfer/3, sort_tx/1, get_transactions/1, get_transactions_from/1, make_account/2]).
 
 
 %% Opens an account, that is creates a new account containing a new person 
 %% Writes them into database.
 
+-spec make_account(account_number(), money()) -> #account{}.
+make_account(AccNr, Amount) ->
+    Acc = #account{account_number = AccNr,
+                   amount = Amount},
+    database:put_account(Acc),
+    Acc.
 
 -spec get_transactions(unique_id()) -> list(#transaction{}).
 get_transactions(Id) ->
