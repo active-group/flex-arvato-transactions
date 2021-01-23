@@ -19,7 +19,8 @@ destroy_tables() ->
 
 % unfortunately, delete_table doesn't always work such that create_table doesn't fail, so don't check return value
 create_tables() ->
-    mnesia:create_table(transaction, [{attributes, [id, timestamp, from_acc_nr, to_acc_nr, amount]}]),
+    mnesia:create_table(transaction, [{attributes, [id, timestamp, from_acc_nr, to_acc_nr, amount,
+         from_account_resulting_balance, to_account_resulting_balance]}]),
     mnesia:create_table(account, [{attributes, [account_number, amount]}]),
     mnesia:create_table(table_id, [{record_name, table_id}, {attributes, record_info(fields, table_id)}]).
 
@@ -79,11 +80,13 @@ get_account(AccountNumber) ->
     read_one(account, AccountNumber, fun deserialize_account/1).
 
 -spec put_transaction(#transaction{}) -> ok.
-put_transaction(#transaction{id = Id, timestamp = Timestamp, from_acc_nr = FromAccNr, to_acc_nr = ToAccNr, amount = Amount}) ->
-    write(transaction, {Id, Timestamp, FromAccNr, ToAccNr, Amount}).
+put_transaction(#transaction{id = Id, timestamp = Timestamp, from_acc_nr = FromAccNr, to_acc_nr = ToAccNr, amount = Amount,
+                             from_account_resulting_balance = FromBalance, to_account_resulting_balance = ToBalance}) ->
+    write(transaction, {Id, Timestamp, FromAccNr, ToAccNr, Amount, FromBalance, ToBalance}).
 
-deserialize_transaction({Id, Timestamp, FromAccNr, ToAccNr, Amount}) ->
-    #transaction{id = Id, timestamp = Timestamp, from_acc_nr = FromAccNr, to_acc_nr = ToAccNr, amount = Amount}.
+deserialize_transaction({Id, Timestamp, FromAccNr, ToAccNr, Amount, FromBalance, ToBalance}) ->
+    #transaction{id = Id, timestamp = Timestamp, from_acc_nr = FromAccNr, to_acc_nr = ToAccNr, amount = Amount,
+                 from_account_resulting_balance = FromBalance, to_account_resulting_balance = ToBalance}.
 
 -spec get_transaction(unique_id()) -> {ok, #transaction{}} | {error, any()}.
 get_transaction(Id) ->

@@ -66,10 +66,30 @@ put_testAccounts(_) ->
 transactions_server_test(_) ->
   fun () ->
     erlbank_transactions_server:start(),
-    gen_server:cast(whereis(transaction_service),
+    business_logic:make_account(1, 700),
+    business_logic:make_account(2, 400),
+    business_logic:transfer(1, 2, 200),
+    business_logic:transfer(2, 1, 300),
+    gen_server:cast(transaction_service,
       #transaction_event_subscription{ 
             from_transaction_id = 0, 
             subscriber_pid = self()}),
+    receive
+      {_, Transaction1} -> 
+        #transaction_event{ transaction_id = 1, 
+                       from_acc_nr = 1, to_acc_nr = 2, 
+                       amount = 200,
+                       from_account_resulting_balance = 500,
+                       to_account_resulting_balance = 600} = Transaction1
+    end,
+    receive
+      {_, Transaction2} -> 
+         #transaction_event{ transaction_id = 2, 
+                       from_acc_nr = 2, to_acc_nr = 1, 
+                       amount = 300,
+                       from_account_resulting_balance = 300,
+                       to_account_resulting_balance = 800} = Transaction2
+    end,
     Event = #transaction_event{transaction_id = 1,
         timestamp = erlang:timestamp(),
         from_acc_nr = 1,
@@ -77,8 +97,7 @@ transactions_server_test(_) ->
         amount = 55,
         from_account_resulting_balance = 75,
         to_account_resulting_balance = 65},        
-    gen_server:cast(whereis(transaction_service), 
-      Event),
+    gen_server:cast(transaction_service, Event),
     receive
       {_, REvent} -> Event = REvent
     end,
