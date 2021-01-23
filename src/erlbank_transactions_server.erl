@@ -56,7 +56,7 @@ send_transactions(SubscriberPid, [Tx | RestTransactions]) ->
     from_account_resulting_balance = Tx#transaction.from_account_resulting_balance,
     to_account_resulting_balance = Tx#transaction.to_account_resulting_balance
   },
-  gen_server:cast(transaction_service, TransactionEvent),
+  gen_server:cast(SubscriberPid, TransactionEvent),
   send_transactions(SubscriberPid, RestTransactions).
 
 
