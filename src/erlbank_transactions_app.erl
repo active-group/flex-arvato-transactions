@@ -27,6 +27,7 @@ start_cowboy() ->
 start(_StartType, _StartArgs) ->
     database:init_database(),
     start_cowboy(),
+    account_poller:poll_process(),
     erlbank_transactions_sup:start_link().
 
 stop(_State) ->
