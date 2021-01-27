@@ -17,9 +17,10 @@
 }).
 
 start() ->
-  {ok, Pid} = gen_server:start(?MODULE, unused, [{debug, [trace, {log_to_file, "/var/tmp/transactions.log"} ]}]),
+  {ok, Pid} = gen_server:start(?MODULE, unused, []),
                            %  ^^^^^^^^^^^^ wird zum  Argument von init
   % macht einen neuen Prozess, ruft dort init auf, startet Schleife, die Nachrichten empfängt
+  lager:info("started transactions server at pid ~p", [Pid]),
   register(transaction_service, Pid),
   global:register_name(transaction_service, Pid).
 
