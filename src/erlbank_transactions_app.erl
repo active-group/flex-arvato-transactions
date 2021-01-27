@@ -24,10 +24,26 @@ start_cowboy() ->
                                  #{env => #{dispatch => Dispatch}}).
 
 
+keep_pinging(Node) ->
+    case net_adm:ping(Node) of
+        pong -> lager:info("successfully connected with node ~p", [Node]),
+                ok;
+        _ -> lager:info("re-pinging node ~p", [Node]),
+             timer:sleep(1000),
+             keep_pinging(Node)
+    end.
+
 start(_StartType, _StartArgs) ->
     database:init_database(),
     start_cowboy(),
+
+    AccountNode = list_to_atom(os:getenv("ACCOUNT_NODE")),
+    keep_pinging(AccountNode),
+
+    lager:info("Consuming accounts on: ~p~n", [AccountNode]),
+
     account_poller:poll_process(),
+    erlbank_transactions_server:start(),
     erlbank_transactions_sup:start_link().
 
 stop(_State) ->
