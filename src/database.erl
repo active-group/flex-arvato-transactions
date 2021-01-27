@@ -5,6 +5,7 @@
 -export([init_database/0,
          put_account/1, get_account/1,
          put_transaction/1, get_transaction/1, get_all_transactions/0, get_all_transactions/1, get_transactions_from/1,  
+         get_latest_account_number/0,
          unique_tx_id/0,
          atomically/1]).
 
@@ -28,7 +29,7 @@ create_tables() ->
     mnesia:create_table(table_id, [{record_name, table_id}, {attributes, record_info(fields, table_id)}]).
 
 clear_tables() ->
-    mnesia:clear_table(account),
+    mnesia:clear_table(transaction),
     mnesia:clear_table(account),
     mnesia:clear_table(table_id).
 
@@ -72,6 +73,16 @@ deserialize_account({AccountNumber,  Amount}) ->
 get_account(AccountNumber) ->
     read_one(account, AccountNumber, fun deserialize_account/1).
 
+-spec get_all_accounts() -> list(#account{}).
+get_all_accounts() -> read_all(account, fun deserialize_account/1).
+
+-spec get_latest_account_number() -> number().
+get_latest_account_number() ->
+    case get_all_accounts() of
+        [] -> 0; % guess
+        Accounts -> LastAccount = lists:max(Accounts),
+                    LastAccount#account.account_number
+    end.
 -spec put_transaction(#transaction{}) -> ok.
 put_transaction(#transaction{id = Id, timestamp = Timestamp, from_acc_nr = FromAccNr, to_acc_nr = ToAccNr, amount = Amount,
                              from_account_resulting_balance = FromBalance, to_account_resulting_balance = ToBalance}) ->
